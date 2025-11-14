@@ -1,47 +1,103 @@
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * REFACTOR #1: Array → ArrayList
+ * 
+ * PROBLEMA ORIGINAL: Array fixo limitava o estoque e exigia código complexo para remoção
+ * SOLUÇÃO: ArrayList cresce dinamicamente e tem métodos prontos (add, remove, etc)
+ * 
+ * VANTAGENS:
+ * - Sem limite de capacidade
+ * - Código mais simples e legível
+ * - Menos propenso a bugs (IndexOutOfBounds, etc)
+ * - Padrão da indústria para coleções dinâmicas
+ */
 public class Estoque {
-    private Produto[] produto;
-    private int proximaPosLivre = 0;
+    // List é a interface, ArrayList é a implementação
+    // Boa prática: programar para interface, não para implementação
+    private List<Produto> produtos;
 
-    public Estoque(int capacidade) {
-        this.produto = new Produto[capacidade];
+    public Estoque() {
+        // Não precisa mais de capacidade inicial
+        this.produtos = new ArrayList<>();
     }
-    public void adicionarProduto(Produto p){
-        if(this.proximaPosLivre < this.produto.length){
-            this.produto[proximaPosLivre] = p;
-            proximaPosLivre++;
+    
+    /**
+     * REFACTOR #2: Validação com exceção
+     * 
+     * PROBLEMA ORIGINAL: System.out.println dentro da classe de negócio
+     * SOLUÇÃO: Lançar exceção e deixar quem chama decidir como tratar
+     * 
+     * PRINCÍPIO: Separação de responsabilidades (SRP)
+     * - Estoque cuida da lógica de negócio
+     * - App/UI cuida de mostrar mensagens ao usuário
+     */
+    public void adicionarProduto(Produto p) {
+        if (p == null) {
+            throw new IllegalArgumentException("Produto não pode ser nulo");
         }
-        else{
-            System.out.println("Erro, Estoque Cheio");
+        
+        // Validar código duplicado
+        if (buscarProdutoPorCodigo(p.getCodigo()) != null) {
+            throw new IllegalArgumentException("Já existe um produto com o código " + p.getCodigo());
         }
-
+        
+        produtos.add(p);
     }
-    public void listarProdutos(){
-        System.out.println("---Listando Produtos---");
-        for(int j = 0; j < this.proximaPosLivre; j++){
-            System.out.println(produto[j].toString() + "\n");
-        }
-        System.out.println("----------------------------");
+    
+    /**
+     * REFACTOR #3: Retornar lista imutável
+     * 
+     * PROBLEMA: Se retornarmos a lista direta, alguém pode modificá-la externamente
+     * SOLUÇÃO: Retornar cópia ou usar Collections.unmodifiableList()
+     */
+    public List<Produto> listarProdutos() {
+        // Retorna uma nova lista para não expor a interna
+        return new ArrayList<>(produtos);
     }
-    public Produto buscarProdutoPorCodigo( int codigoDoProduto){
-        for(int k = 0; k < this.proximaPosLivre; k++){
-            if(this.produto[k].getCodigo() == codigoDoProduto){
-                return this.produto[k];
+    
+    /**
+     * REFACTOR #4: Enhanced for loop
+     * 
+     * VANTAGEM: Mais legível, menos propenso a erros de índice
+     */
+    public Produto buscarProdutoPorCodigo(int codigoDoProduto) {
+        for (Produto produto : produtos) {
+            if (produto.getCodigo() == codigoDoProduto) {
+                return produto;
             }
         }
         return null;
     }
-    public boolean removerProduto(int codigoParaRemover){
-        for(int k = 0; k < this.proximaPosLivre; k++){
-            if(this.produto[k].getCodigo() == codigoParaRemover){
-                for(int j = k; j < this.proximaPosLivre - 1; j++){
-                    this.produto[j] = this.produto[j+1];
-                }
-                this.proximaPosLivre--;
-                this.produto[this.proximaPosLivre] = null;
-                return true;
-            }
+    
+    /**
+     * REFACTOR #5: Remoção simplificada
+     * 
+     * ANTES: Loop manual para deslocar elementos
+     * DEPOIS: ArrayList.remove() faz isso automaticamente
+     */
+    public boolean removerProduto(int codigoParaRemover) {
+        Produto produto = buscarProdutoPorCodigo(codigoParaRemover);
+        if (produto != null) {
+            produtos.remove(produto);
+            return true;
         }
         return false;
+    }
+    
+    /**
+     * Método auxiliar útil
+     */
+    public int quantidadeProdutos() {
+        return produtos.size();
+    }
+    
+    /**
+     * Verifica se o estoque está vazio
+     */
+    public boolean estaVazio() {
+        return produtos.isEmpty();
     }
 }
 
